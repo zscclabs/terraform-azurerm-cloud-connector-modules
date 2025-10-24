@@ -9,13 +9,13 @@ data "azurerm_subscription" "current" {
 ################################################################################
 # Create Storage Account to store Function App
 resource "azurerm_storage_account" "cc_function_storage_account" {
-  count                      = var.existing_storage_account ? 0 : 1
-  name                       = "stccvmss${var.resource_tag}"
-  resource_group_name        = var.resource_group
-  location                   = var.location
-  account_tier               = "Standard"
-  account_replication_type   = "LRS"
-  public_network_access_enabled = var.storage_use_private_endpoint ? false : true
+  count                           = var.existing_storage_account ? 0 : 1
+  name                            = "stccvmss${var.resource_tag}"
+  resource_group_name             = var.resource_group
+  location                        = var.location
+  account_tier                    = "Standard"
+  account_replication_type        = "LRS"
+  public_network_access_enabled   = true
   default_to_oauth_authentication = true
 
   tags = var.global_tags
@@ -34,6 +34,10 @@ resource "azurerm_storage_container" "cc_function_storage_container" {
   name                  = "function-zip-container"
   storage_account_name  = local.storage_account_name
   container_access_type = "private"
+
+  depends_on = [
+    azurerm_storage_account.cc_function_storage_account,
+  ]
 }
 
 # Create Storage Blob to store function zip file
@@ -45,6 +49,28 @@ resource "azurerm_storage_blob" "cc_function_storage_blob" {
   type                   = "Block"
   source                 = "${path.module}/zscaler_cc_function_app.zip"
   content_md5            = filemd5("${path.module}/zscaler_cc_function_app.zip")
+
+  depends_on = [
+    azurerm_storage_container.cc_function_storage_container,
+  ]
+}
+
+# Configure storage account network rules after blob upload
+# This restricts access to the storage account while still allowing private endpoint connectivity
+resource "azurerm_storage_account_network_rules" "cc_function_storage_network_rules" {
+  count              = var.storage_use_private_endpoint && !var.existing_storage_account ? 1 : 0
+  storage_account_id = azurerm_storage_account.cc_function_storage_account[0].id
+
+  default_action             = "Deny"
+  bypass                     = ["AzureServices"]
+  ip_rules                   = []
+  virtual_network_subnet_ids = []
+
+  # Apply network rules only after the blob has been uploaded
+  depends_on = [
+    azurerm_storage_blob.cc_function_storage_blob,
+    azurerm_storage_container.cc_function_storage_container,
+  ]
 }
 
 # Create App Service Plan
@@ -263,6 +289,7 @@ resource "azurerm_linux_function_app" "vmss_orchestration_app" {
     azurerm_private_endpoint.storage_table_pe,
     azurerm_private_endpoint.storage_queue_pe,
     azurerm_private_endpoint.storage_web_pe,
+    azurerm_storage_account_network_rules.cc_function_storage_network_rules,
   ]
 }
 

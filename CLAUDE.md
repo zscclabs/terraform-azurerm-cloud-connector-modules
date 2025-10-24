@@ -182,6 +182,21 @@ The function app's managed identity must have:
 - **Storage Blob Data Owner** role on storage account (for package deployment)
 - **Storage Account Contributor** or similar for file/table/queue access
 
+### Deployment Sequence for Private Storage
+To allow Terraform to deploy the function package while maintaining security:
+
+1. **Storage account created** with `public_network_access_enabled = true` (default open)
+2. **Container and blob uploaded** by Terraform (function zip package)
+3. **Network rules applied** via `azurerm_storage_account_network_rules` with `default_action = "Deny"`
+4. **Private endpoints created** for all storage services (blob, file, table, queue, web)
+5. **Function app deployed** with VNet integration and managed identity
+
+This sequence allows Terraform to upload the function package before locking down the storage account. After deployment, the storage account is only accessible via:
+- Private endpoints from within the VNet
+- Azure services (via `bypass = ["AzureServices"]`)
+
+The `azurerm_storage_account_network_rules` resource depends on the blob upload, ensuring the package is deployed before access is restricted.
+
 ## Azure Prerequisites
 
 Before deployment, ensure:
