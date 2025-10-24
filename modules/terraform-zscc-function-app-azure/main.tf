@@ -91,7 +91,7 @@ resource "azurerm_application_insights" "vmss_orchestration_app_insights" {
 ################################################################################
 # Private Endpoint for Blob storage
 resource "azurerm_private_endpoint" "storage_blob_pe" {
-  count               = var.storage_use_private_endpoint && var.storage_private_endpoints_subnet_id != "" ? 1 : 0
+  count               = var.storage_use_private_endpoint ? 1 : 0
   name                = "${var.name_prefix}-ccvmss-${var.resource_tag}-blob-pe"
   location            = var.location
   resource_group_name = var.resource_group
@@ -114,7 +114,7 @@ resource "azurerm_private_endpoint" "storage_blob_pe" {
 
 # Private Endpoint for File storage
 resource "azurerm_private_endpoint" "storage_file_pe" {
-  count               = var.storage_use_private_endpoint && var.storage_private_endpoints_subnet_id != "" ? 1 : 0
+  count               = var.storage_use_private_endpoint ? 1 : 0
   name                = "${var.name_prefix}-ccvmss-${var.resource_tag}-file-pe"
   location            = var.location
   resource_group_name = var.resource_group
@@ -137,7 +137,7 @@ resource "azurerm_private_endpoint" "storage_file_pe" {
 
 # Private Endpoint for Table storage
 resource "azurerm_private_endpoint" "storage_table_pe" {
-  count               = var.storage_use_private_endpoint && var.storage_private_endpoints_subnet_id != "" ? 1 : 0
+  count               = var.storage_use_private_endpoint ? 1 : 0
   name                = "${var.name_prefix}-ccvmss-${var.resource_tag}-table-pe"
   location            = var.location
   resource_group_name = var.resource_group
@@ -160,7 +160,7 @@ resource "azurerm_private_endpoint" "storage_table_pe" {
 
 # Private Endpoint for Queue storage
 resource "azurerm_private_endpoint" "storage_queue_pe" {
-  count               = var.storage_use_private_endpoint && var.storage_private_endpoints_subnet_id != "" ? 1 : 0
+  count               = var.storage_use_private_endpoint ? 1 : 0
   name                = "${var.name_prefix}-ccvmss-${var.resource_tag}-queue-pe"
   location            = var.location
   resource_group_name = var.resource_group
@@ -183,7 +183,7 @@ resource "azurerm_private_endpoint" "storage_queue_pe" {
 
 # Private Endpoint for Web (static website) storage
 resource "azurerm_private_endpoint" "storage_web_pe" {
-  count               = var.storage_use_private_endpoint && var.storage_private_endpoints_subnet_id != "" ? 1 : 0
+  count               = var.storage_use_private_endpoint ? 1 : 0
   name                = "${var.name_prefix}-ccvmss-${var.resource_tag}-web-pe"
   location            = var.location
   resource_group_name = var.resource_group
@@ -218,7 +218,7 @@ resource "azurerm_linux_function_app" "vmss_orchestration_app" {
   storage_account_access_key               = var.storage_use_private_endpoint ? null : local.storage_account_access_key
   storage_uses_managed_identity            = var.storage_use_private_endpoint ? true : false
   service_plan_id                          = azurerm_service_plan.vmss_orchestration_app_service_plan.id
-  virtual_network_subnet_id                = var.function_app_vnet_integration_subnet_id != "" ? var.function_app_vnet_integration_subnet_id : null
+  virtual_network_subnet_id                = var.storage_use_private_endpoint ? var.function_app_vnet_integration_subnet_id : null
   public_network_access_enabled            = var.storage_use_private_endpoint ? false : true
 
   identity {
@@ -276,7 +276,7 @@ resource "azurerm_linux_function_app" "vmss_orchestration_app_with_manual_sync" 
   storage_account_access_key               = var.storage_use_private_endpoint ? null : local.storage_account_access_key
   storage_uses_managed_identity            = var.storage_use_private_endpoint ? true : false
   service_plan_id                          = azurerm_service_plan.vmss_orchestration_app_service_plan.id
-  virtual_network_subnet_id                = var.function_app_vnet_integration_subnet_id != "" ? var.function_app_vnet_integration_subnet_id : null
+  virtual_network_subnet_id                = var.storage_use_private_endpoint ? var.function_app_vnet_integration_subnet_id : null
   public_network_access_enabled            = var.storage_use_private_endpoint ? false : true
 
   identity {

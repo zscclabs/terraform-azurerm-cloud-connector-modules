@@ -25,12 +25,12 @@ output "subscription_id" {
 
 output "storage_blob_private_endpoint_ip" {
   description = "Private IP address of the storage blob private endpoint"
-  value       = var.storage_use_private_endpoint && var.storage_private_endpoints_subnet_id != "" ? azurerm_private_endpoint.storage_blob_pe[0].private_service_connection[0].private_ip_address : ""
+  value       = var.storage_use_private_endpoint ? azurerm_private_endpoint.storage_blob_pe[0].private_service_connection[0].private_ip_address : ""
 }
 
 output "storage_file_private_endpoint_ip" {
   description = "Private IP address of the storage file private endpoint"
-  value       = var.storage_use_private_endpoint && var.storage_private_endpoints_subnet_id != "" ? azurerm_private_endpoint.storage_file_pe[0].private_service_connection[0].private_ip_address : ""
+  value       = var.storage_use_private_endpoint ? azurerm_private_endpoint.storage_file_pe[0].private_service_connection[0].private_ip_address : ""
 }
 
 output "storage_account_name" {
