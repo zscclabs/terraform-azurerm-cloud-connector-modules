@@ -137,3 +137,27 @@ variable "asp_sku_name" {
     error_message = "Input asp_sku_name selected is not a valid/approved SKU Name."
   }
 }
+
+variable "function_app_vnet_integration_subnet_id" {
+  type        = string
+  description = "Subnet ID for Function App VNet Integration. Required for private storage account access."
+  default     = ""
+}
+
+variable "storage_private_endpoints_subnet_id" {
+  type        = string
+  description = "Subnet ID for Storage Account Private Endpoints. Required for private storage account access."
+  default     = ""
+}
+
+variable "storage_private_dns_zone_ids" {
+  type        = map(string)
+  description = "Map of storage service names (blob, file, table, queue, web) to Private DNS Zone IDs for private endpoint DNS resolution"
+  default     = {}
+}
+
+variable "storage_use_private_endpoint" {
+  type        = bool
+  description = "Enable private endpoint for storage account. When true, storage account will be fully private with no public network access."
+  default     = true
+}

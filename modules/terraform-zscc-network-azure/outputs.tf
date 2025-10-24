@@ -32,3 +32,24 @@ output "private_dns_subnet_id" {
   description = "Private DNS Outbound Endpoint Subnet ID"
   value       = var.zpa_enabled ? azurerm_subnet.private_dns_subnet[0].id : ""
 }
+
+output "function_app_vnet_integration_subnet_id" {
+  description = "Function App VNet Integration Subnet ID"
+  value       = var.function_app_enabled ? azurerm_subnet.function_app_vnet_integration_subnet[0].id : ""
+}
+
+output "function_app_storage_pe_subnet_id" {
+  description = "Function App Storage Account Private Endpoints Subnet ID"
+  value       = var.function_app_enabled ? azurerm_subnet.function_app_storage_pe_subnet[0].id : ""
+}
+
+output "storage_private_dns_zone_ids" {
+  description = "Map of storage service names to Private DNS Zone IDs for private endpoint DNS resolution"
+  value = var.function_app_enabled ? {
+    blob  = azurerm_private_dns_zone.storage_blob[0].id
+    file  = azurerm_private_dns_zone.storage_file[0].id
+    table = azurerm_private_dns_zone.storage_table[0].id
+    queue = azurerm_private_dns_zone.storage_queue[0].id
+    web   = azurerm_private_dns_zone.storage_web[0].id
+  } : {}
+}

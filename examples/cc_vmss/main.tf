@@ -58,6 +58,7 @@ module "network" {
   zones                 = var.zones
   lb_frontend_ip        = module.cc_lb.lb_ip
   zpa_enabled           = var.zpa_enabled
+  function_app_enabled  = true
   #bring-your-own variables
   byo_rg                             = var.byo_rg
   byo_rg_name                        = var.byo_rg_name
@@ -174,6 +175,12 @@ module "cc_functionapp" {
   run_manual_sync                     = var.run_manual_sync
   path_to_scripts                     = coalesce(var.path_to_scripts, "../../scripts")
   asp_sku_name                        = var.asp_sku_name
+
+  # Private endpoint configuration
+  storage_use_private_endpoint           = true
+  function_app_vnet_integration_subnet_id = module.network.function_app_vnet_integration_subnet_id
+  storage_private_endpoints_subnet_id    = module.network.function_app_storage_pe_subnet_id
+  storage_private_dns_zone_ids           = module.network.storage_private_dns_zone_ids
 }
 
 ################################################################################

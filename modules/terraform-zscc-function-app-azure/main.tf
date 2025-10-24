@@ -9,12 +9,14 @@ data "azurerm_subscription" "current" {
 ################################################################################
 # Create Storage Account to store Function App
 resource "azurerm_storage_account" "cc_function_storage_account" {
-  count                    = var.existing_storage_account ? 0 : 1
-  name                     = "stccvmss${var.resource_tag}"
-  resource_group_name      = var.resource_group
-  location                 = var.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
+  count                      = var.existing_storage_account ? 0 : 1
+  name                       = "stccvmss${var.resource_tag}"
+  resource_group_name        = var.resource_group
+  location                   = var.location
+  account_tier               = "Standard"
+  account_replication_type   = "LRS"
+  public_network_access_enabled = var.storage_use_private_endpoint ? false : true
+  default_to_oauth_authentication = true
 
   tags = var.global_tags
 }
@@ -68,6 +70,7 @@ resource "azurerm_log_analytics_workspace" "vmss_orchestration_log_analytics_wor
 locals {
   storage_account_name       = var.existing_storage_account ? data.azurerm_storage_account.existing_storage_account[0].name : azurerm_storage_account.cc_function_storage_account[0].name
   storage_account_access_key = var.existing_storage_account ? data.azurerm_storage_account.existing_storage_account[0].primary_access_key : azurerm_storage_account.cc_function_storage_account[0].primary_access_key
+  storage_account_id         = var.existing_storage_account ? data.azurerm_storage_account.existing_storage_account[0].id : azurerm_storage_account.cc_function_storage_account[0].id
   log_analytics_workspace_id = var.existing_log_analytics_workspace ? var.existing_log_analytics_workspace_id : azurerm_log_analytics_workspace.vmss_orchestration_log_analytics_workspace[0].id
 }
 
@@ -84,6 +87,125 @@ resource "azurerm_application_insights" "vmss_orchestration_app_insights" {
 
 
 ################################################################################
+# Create Private Endpoints for Storage Account
+################################################################################
+# Private Endpoint for Blob storage
+resource "azurerm_private_endpoint" "storage_blob_pe" {
+  count               = var.storage_use_private_endpoint && var.storage_private_endpoints_subnet_id != "" ? 1 : 0
+  name                = "${var.name_prefix}-ccvmss-${var.resource_tag}-blob-pe"
+  location            = var.location
+  resource_group_name = var.resource_group
+  subnet_id           = var.storage_private_endpoints_subnet_id
+
+  private_service_connection {
+    name                           = "${var.name_prefix}-ccvmss-${var.resource_tag}-blob-psc"
+    private_connection_resource_id = local.storage_account_id
+    is_manual_connection           = false
+    subresource_names              = ["blob"]
+  }
+
+  private_dns_zone_group {
+    name                 = "blob-dns-zone-group"
+    private_dns_zone_ids = [var.storage_private_dns_zone_ids["blob"]]
+  }
+
+  tags = var.global_tags
+}
+
+# Private Endpoint for File storage
+resource "azurerm_private_endpoint" "storage_file_pe" {
+  count               = var.storage_use_private_endpoint && var.storage_private_endpoints_subnet_id != "" ? 1 : 0
+  name                = "${var.name_prefix}-ccvmss-${var.resource_tag}-file-pe"
+  location            = var.location
+  resource_group_name = var.resource_group
+  subnet_id           = var.storage_private_endpoints_subnet_id
+
+  private_service_connection {
+    name                           = "${var.name_prefix}-ccvmss-${var.resource_tag}-file-psc"
+    private_connection_resource_id = local.storage_account_id
+    is_manual_connection           = false
+    subresource_names              = ["file"]
+  }
+
+  private_dns_zone_group {
+    name                 = "file-dns-zone-group"
+    private_dns_zone_ids = [var.storage_private_dns_zone_ids["file"]]
+  }
+
+  tags = var.global_tags
+}
+
+# Private Endpoint for Table storage
+resource "azurerm_private_endpoint" "storage_table_pe" {
+  count               = var.storage_use_private_endpoint && var.storage_private_endpoints_subnet_id != "" ? 1 : 0
+  name                = "${var.name_prefix}-ccvmss-${var.resource_tag}-table-pe"
+  location            = var.location
+  resource_group_name = var.resource_group
+  subnet_id           = var.storage_private_endpoints_subnet_id
+
+  private_service_connection {
+    name                           = "${var.name_prefix}-ccvmss-${var.resource_tag}-table-psc"
+    private_connection_resource_id = local.storage_account_id
+    is_manual_connection           = false
+    subresource_names              = ["table"]
+  }
+
+  private_dns_zone_group {
+    name                 = "table-dns-zone-group"
+    private_dns_zone_ids = [var.storage_private_dns_zone_ids["table"]]
+  }
+
+  tags = var.global_tags
+}
+
+# Private Endpoint for Queue storage
+resource "azurerm_private_endpoint" "storage_queue_pe" {
+  count               = var.storage_use_private_endpoint && var.storage_private_endpoints_subnet_id != "" ? 1 : 0
+  name                = "${var.name_prefix}-ccvmss-${var.resource_tag}-queue-pe"
+  location            = var.location
+  resource_group_name = var.resource_group
+  subnet_id           = var.storage_private_endpoints_subnet_id
+
+  private_service_connection {
+    name                           = "${var.name_prefix}-ccvmss-${var.resource_tag}-queue-psc"
+    private_connection_resource_id = local.storage_account_id
+    is_manual_connection           = false
+    subresource_names              = ["queue"]
+  }
+
+  private_dns_zone_group {
+    name                 = "queue-dns-zone-group"
+    private_dns_zone_ids = [var.storage_private_dns_zone_ids["queue"]]
+  }
+
+  tags = var.global_tags
+}
+
+# Private Endpoint for Web (static website) storage
+resource "azurerm_private_endpoint" "storage_web_pe" {
+  count               = var.storage_use_private_endpoint && var.storage_private_endpoints_subnet_id != "" ? 1 : 0
+  name                = "${var.name_prefix}-ccvmss-${var.resource_tag}-web-pe"
+  location            = var.location
+  resource_group_name = var.resource_group
+  subnet_id           = var.storage_private_endpoints_subnet_id
+
+  private_service_connection {
+    name                           = "${var.name_prefix}-ccvmss-${var.resource_tag}-web-psc"
+    private_connection_resource_id = local.storage_account_id
+    is_manual_connection           = false
+    subresource_names              = ["web"]
+  }
+
+  private_dns_zone_group {
+    name                 = "web-dns-zone-group"
+    private_dns_zone_ids = [var.storage_private_dns_zone_ids["web"]]
+  }
+
+  tags = var.global_tags
+}
+
+
+################################################################################
 # Create Function App
 ################################################################################
 resource "azurerm_linux_function_app" "vmss_orchestration_app" {
@@ -92,9 +214,12 @@ resource "azurerm_linux_function_app" "vmss_orchestration_app" {
   resource_group_name = var.resource_group
   location            = var.location
 
-  storage_account_name       = local.storage_account_name
-  storage_account_access_key = local.storage_account_access_key
-  service_plan_id            = azurerm_service_plan.vmss_orchestration_app_service_plan.id
+  storage_account_name                     = local.storage_account_name
+  storage_account_access_key               = var.storage_use_private_endpoint ? null : local.storage_account_access_key
+  storage_uses_managed_identity            = var.storage_use_private_endpoint ? true : false
+  service_plan_id                          = azurerm_service_plan.vmss_orchestration_app_service_plan.id
+  virtual_network_subnet_id                = var.function_app_vnet_integration_subnet_id != "" ? var.function_app_vnet_integration_subnet_id : null
+  public_network_access_enabled            = var.storage_use_private_endpoint ? false : true
 
   identity {
     type         = "UserAssigned"
@@ -121,6 +246,7 @@ resource "azurerm_linux_function_app" "vmss_orchestration_app" {
       python_version = "3.11"
     }
     application_insights_connection_string = azurerm_application_insights.vmss_orchestration_app_insights.connection_string
+    vnet_route_all_enabled                 = var.storage_use_private_endpoint ? true : false
   }
 
   lifecycle {
@@ -130,6 +256,14 @@ resource "azurerm_linux_function_app" "vmss_orchestration_app" {
   }
 
   tags = var.global_tags
+
+  depends_on = [
+    azurerm_private_endpoint.storage_blob_pe,
+    azurerm_private_endpoint.storage_file_pe,
+    azurerm_private_endpoint.storage_table_pe,
+    azurerm_private_endpoint.storage_queue_pe,
+    azurerm_private_endpoint.storage_web_pe,
+  ]
 }
 
 resource "azurerm_linux_function_app" "vmss_orchestration_app_with_manual_sync" {
@@ -138,9 +272,12 @@ resource "azurerm_linux_function_app" "vmss_orchestration_app_with_manual_sync" 
   resource_group_name = var.resource_group
   location            = var.location
 
-  storage_account_name       = local.storage_account_name
-  storage_account_access_key = local.storage_account_access_key
-  service_plan_id            = azurerm_service_plan.vmss_orchestration_app_service_plan.id
+  storage_account_name                     = local.storage_account_name
+  storage_account_access_key               = var.storage_use_private_endpoint ? null : local.storage_account_access_key
+  storage_uses_managed_identity            = var.storage_use_private_endpoint ? true : false
+  service_plan_id                          = azurerm_service_plan.vmss_orchestration_app_service_plan.id
+  virtual_network_subnet_id                = var.function_app_vnet_integration_subnet_id != "" ? var.function_app_vnet_integration_subnet_id : null
+  public_network_access_enabled            = var.storage_use_private_endpoint ? false : true
 
   identity {
     type         = "UserAssigned"
@@ -167,6 +304,7 @@ resource "azurerm_linux_function_app" "vmss_orchestration_app_with_manual_sync" 
       python_version = "3.11"
     }
     application_insights_connection_string = azurerm_application_insights.vmss_orchestration_app_insights.connection_string
+    vnet_route_all_enabled                 = var.storage_use_private_endpoint ? true : false
   }
 
   lifecycle {
@@ -176,6 +314,14 @@ resource "azurerm_linux_function_app" "vmss_orchestration_app_with_manual_sync" 
   }
 
   tags = var.global_tags
+
+  depends_on = [
+    azurerm_private_endpoint.storage_blob_pe,
+    azurerm_private_endpoint.storage_file_pe,
+    azurerm_private_endpoint.storage_table_pe,
+    azurerm_private_endpoint.storage_queue_pe,
+    azurerm_private_endpoint.storage_web_pe,
+  ]
 
   provisioner "local-exec" {
     command = "${var.path_to_scripts}/manual_sync.sh ${data.azurerm_subscription.current.subscription_id} ${var.resource_group} ${azurerm_linux_function_app.vmss_orchestration_app_with_manual_sync[0].name} 2>${var.path_to_scripts}/stderr >${var.path_to_scripts}/stdout; echo $? >${var.path_to_scripts}/exitstatus"

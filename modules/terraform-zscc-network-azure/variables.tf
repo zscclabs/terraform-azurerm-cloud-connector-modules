@@ -210,3 +210,21 @@ variable "existing_nat_gw_subnet_association" {
   description = "Set this to true only if both byo_nat_gws and byo_subnets variables are true. this implies that there are already NAT Gateway resources associated to subnets where Cloud Connectors are being deployed to"
   default     = false
 }
+
+variable "function_app_enabled" {
+  type        = bool
+  description = "Configure Function App Subnets (VNet integration and storage private endpoints) if set to true. Required for VMSS deployments with private storage"
+  default     = false
+}
+
+variable "function_app_vnet_integration_subnet" {
+  type        = string
+  description = "Function App VNet Integration Subnet to create in VNet. This is only required if you want to override the default subnet that this code creates via network_address_space variable."
+  default     = null
+}
+
+variable "function_app_storage_pe_subnet" {
+  type        = string
+  description = "Function App Storage Account Private Endpoints Subnet to create in VNet. This is only required if you want to override the default subnet that this code creates via network_address_space variable."
+  default     = null
+}

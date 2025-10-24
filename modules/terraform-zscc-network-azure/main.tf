@@ -225,3 +225,133 @@ resource "azurerm_subnet_route_table_association" "private_dns_rt_association" {
   subnet_id      = azurerm_subnet.private_dns_subnet[count.index].id
   route_table_id = azurerm_route_table.private_dns_rt[count.index].id
 }
+
+
+################################################################################
+# Function App VNet Integration Subnet
+################################################################################
+# Create subnet for Function App VNet integration with delegation to Microsoft.Web/serverFarms
+resource "azurerm_subnet" "function_app_vnet_integration_subnet" {
+  count                = var.function_app_enabled ? 1 : 0
+  name                 = "${var.name_prefix}-function-app-vnet-integration-subnet-${var.resource_tag}"
+  resource_group_name  = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+  virtual_network_name = try(data.azurerm_virtual_network.vnet_selected[0].name, azurerm_virtual_network.vnet[0].name)
+  address_prefixes     = var.function_app_vnet_integration_subnet != null ? [var.function_app_vnet_integration_subnet] : [cidrsubnet(var.network_address_space, 12, 2481)]
+
+  delegation {
+    name = "Microsoft.Web.serverFarms"
+    service_delegation {
+      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+      name    = "Microsoft.Web/serverFarms"
+    }
+  }
+}
+
+
+################################################################################
+# Storage Account Private Endpoints Subnet
+################################################################################
+# Create subnet for Function App Storage Account private endpoints
+resource "azurerm_subnet" "function_app_storage_pe_subnet" {
+  count                = var.function_app_enabled ? 1 : 0
+  name                 = "${var.name_prefix}-function-app-storage-pe-subnet-${var.resource_tag}"
+  resource_group_name  = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+  virtual_network_name = try(data.azurerm_virtual_network.vnet_selected[0].name, azurerm_virtual_network.vnet[0].name)
+  address_prefixes     = var.function_app_storage_pe_subnet != null ? [var.function_app_storage_pe_subnet] : [cidrsubnet(var.network_address_space, 12, 2482)]
+}
+
+
+################################################################################
+# Private DNS Zones for Storage Account Private Endpoints
+################################################################################
+# Create Private DNS zones for storage account private endpoints
+resource "azurerm_private_dns_zone" "storage_blob" {
+  count               = var.function_app_enabled ? 1 : 0
+  name                = "privatelink.blob.core.windows.net"
+  resource_group_name = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+
+  tags = var.global_tags
+}
+
+resource "azurerm_private_dns_zone" "storage_file" {
+  count               = var.function_app_enabled ? 1 : 0
+  name                = "privatelink.file.core.windows.net"
+  resource_group_name = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+
+  tags = var.global_tags
+}
+
+resource "azurerm_private_dns_zone" "storage_table" {
+  count               = var.function_app_enabled ? 1 : 0
+  name                = "privatelink.table.core.windows.net"
+  resource_group_name = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+
+  tags = var.global_tags
+}
+
+resource "azurerm_private_dns_zone" "storage_queue" {
+  count               = var.function_app_enabled ? 1 : 0
+  name                = "privatelink.queue.core.windows.net"
+  resource_group_name = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+
+  tags = var.global_tags
+}
+
+resource "azurerm_private_dns_zone" "storage_web" {
+  count               = var.function_app_enabled ? 1 : 0
+  name                = "privatelink.web.core.windows.net"
+  resource_group_name = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+
+  tags = var.global_tags
+}
+
+# Link Private DNS zones to VNet
+resource "azurerm_private_dns_zone_virtual_network_link" "storage_blob_vnet_link" {
+  count                 = var.function_app_enabled ? 1 : 0
+  name                  = "${var.name_prefix}-blob-dns-link-${var.resource_tag}"
+  resource_group_name   = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+  private_dns_zone_name = azurerm_private_dns_zone.storage_blob[0].name
+  virtual_network_id    = try(data.azurerm_virtual_network.vnet_selected[0].id, azurerm_virtual_network.vnet[0].id)
+
+  tags = var.global_tags
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "storage_file_vnet_link" {
+  count                 = var.function_app_enabled ? 1 : 0
+  name                  = "${var.name_prefix}-file-dns-link-${var.resource_tag}"
+  resource_group_name   = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+  private_dns_zone_name = azurerm_private_dns_zone.storage_file[0].name
+  virtual_network_id    = try(data.azurerm_virtual_network.vnet_selected[0].id, azurerm_virtual_network.vnet[0].id)
+
+  tags = var.global_tags
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "storage_table_vnet_link" {
+  count                 = var.function_app_enabled ? 1 : 0
+  name                  = "${var.name_prefix}-table-dns-link-${var.resource_tag}"
+  resource_group_name   = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+  private_dns_zone_name = azurerm_private_dns_zone.storage_table[0].name
+  virtual_network_id    = try(data.azurerm_virtual_network.vnet_selected[0].id, azurerm_virtual_network.vnet[0].id)
+
+  tags = var.global_tags
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "storage_queue_vnet_link" {
+  count                 = var.function_app_enabled ? 1 : 0
+  name                  = "${var.name_prefix}-queue-dns-link-${var.resource_tag}"
+  resource_group_name   = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+  private_dns_zone_name = azurerm_private_dns_zone.storage_queue[0].name
+  virtual_network_id    = try(data.azurerm_virtual_network.vnet_selected[0].id, azurerm_virtual_network.vnet[0].id)
+
+  tags = var.global_tags
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "storage_web_vnet_link" {
+  count                 = var.function_app_enabled ? 1 : 0
+  name                  = "${var.name_prefix}-web-dns-link-${var.resource_tag}"
+  resource_group_name   = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+  private_dns_zone_name = azurerm_private_dns_zone.storage_web[0].name
+  virtual_network_id    = try(data.azurerm_virtual_network.vnet_selected[0].id, azurerm_virtual_network.vnet[0].id)
+
+  tags = var.global_tags
+}
