@@ -53,10 +53,22 @@ jobs:
           terraform validate -no-color
 
       - name: Terraform Init
+        id: init-zscc-keyvault
+        run: |
+          cd modules/terraform-zscc-keyvault-azure
+          terraform init
+
+      - name: Terraform Validate
+        id: validate-zscc-keyvault
+        run: |
+          cd modules/terraform-zscc-keyvault-azure
+          terraform validate -no-color
+
+      - name: Terraform Init
         id: init-zscc-lb
         run: |
           cd modules/terraform-zscc-lb-azure
-          terraform init   
+          terraform init
 
       - name: Terraform Validate
         id: validate-zscc-lb
