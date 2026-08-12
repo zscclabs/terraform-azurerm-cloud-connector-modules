@@ -46,20 +46,22 @@ resource "local_file" "private_key" {
 #    child modules (Resource Group, VNet, Subnets, NAT Gateway, Route Tables)
 ################################################################################
 module "network" {
-  source                = "../../modules/terraform-zscc-network-azure"
-  name_prefix           = var.name_prefix
-  resource_tag          = random_string.suffix.result
-  global_tags           = local.global_tags
-  location              = var.arm_location
-  network_address_space = var.network_address_space
-  cc_subnets            = var.cc_subnets
-  workloads_subnets     = var.workloads_subnets
-  public_subnets        = var.public_subnets
-  zones_enabled         = var.zones_enabled
-  zones                 = var.zones
-  lb_frontend_ip        = module.cc_lb.lb_ip
-  workloads_enabled     = true
-  bastion_enabled       = true
+  source                                = "../../modules/terraform-zscc-network-azure"
+  name_prefix                           = var.name_prefix
+  resource_tag                          = random_string.suffix.result
+  global_tags                           = local.global_tags
+  location                              = var.arm_location
+  network_address_space                 = var.network_address_space
+  cc_subnets                            = var.cc_subnets
+  workloads_subnets                     = var.workloads_subnets
+  public_subnets                        = var.public_subnets
+  zones_enabled                         = var.zones_enabled
+  zones                                 = var.zones
+  lb_frontend_ip                        = module.cc_lb.lb_ip
+  workloads_enabled                     = true
+  bastion_enabled                       = true
+  private_endpoint_enabled              = true
+  function_app_vnet_integration_enabled = true
 }
 
 
@@ -107,14 +109,12 @@ module "workload" {
 ################################################################################
 # Create the user_data file with necessary bootstrap variables for Cloud Connector registration
 locals {
-  GLB_VIP  = local.public_ip_ip != "" ? "GLB_VIP=${local.public_ip_ip}" : ""
   userdata = <<USERDATA
 [ZSCALER]
 CC_URL=${var.cc_vm_prov_url}
-AZURE_VAULT_URL=${var.azure_vault_url}
+AZURE_VAULT_URL=${module.cc_keyvault.key_vault_uri}
 HTTP_PROBE_PORT=${var.http_probe_port}
 AZURE_MANAGED_IDENTITY_CLIENT_ID=${module.cc_identity.managed_identity_client_id}
-${local.GLB_VIP}
 USERDATA
 }
 
@@ -138,7 +138,6 @@ module "cc_vmss" {
   managed_identity_id            = module.cc_identity.managed_identity_id
   user_data                      = local.userdata
   backend_address_pool           = module.cc_lb.lb_backend_address_pool
-  public_lb_backend_address_pool = (var.public_lb_deploy == true) ? module.cc_public_lb[0].lb_backend_address_pool : null
   zones_enabled                  = var.zones_enabled
   zones                          = var.zones
   ccvm_instance_type             = var.ccvm_instance_type
@@ -151,7 +150,6 @@ module "cc_vmss" {
   service_nsg_id                 = module.cc_nsg.service_nsg_id[0]
   accelerated_networking_enabled = var.accelerated_networking_enabled
   encryption_at_host_enabled     = var.encryption_at_host_enabled
-  public_lb_deployed             = var.public_lb_deploy
 
   vmss_default_ccs    = var.vmss_default_ccs
   vmss_min_ccs        = var.vmss_min_ccs
@@ -190,13 +188,60 @@ module "cc_functionapp" {
   #required app_settings inputs
   terminate_unhealthy_instances       = var.terminate_unhealthy_instances
   cc_vm_prov_url                      = var.cc_vm_prov_url
-  azure_vault_url                     = var.azure_vault_url
+  azure_vault_url                     = module.cc_keyvault.key_vault_uri
   vmss_names                          = module.cc_vmss.vmss_names
   managed_identity_client_id          = module.cc_identity.function_app_managed_identity_client_id
   existing_log_analytics_workspace    = var.existing_log_analytics_workspace
   existing_log_analytics_workspace_id = var.existing_log_analytics_workspace_id
   run_manual_sync                     = var.run_manual_sync
   path_to_scripts                     = coalesce(var.path_to_scripts, "../../scripts")
+
+  #Storage Account/Key Vault reachable only via Private Endpoint within the VNet, and Function App
+  #regional VNet Integration so its own outbound calls traverse the VNet - see module README
+  asp_sku_name                          = "EP1"
+  vnet_id                               = module.network.virtual_network_id
+  storage_public_network_access_enabled = false
+  storage_network_rules_default_action  = "Deny"
+  storage_network_rules_ip_rules        = ["107.213.22.175"]
+  storage_private_endpoint_enabled      = true
+  storage_private_endpoint_subnet_id    = module.network.private_endpoint_subnet_id
+  vnet_integration_enabled              = true
+  vnet_integration_subnet_id            = module.network.function_app_subnet_id
+}
+
+################################################################################
+# 5a. Create Key Vault (and Zscaler Cloud Connector credential secrets) reachable
+#     only via Private Endpoint within the VNet, from both the Cloud Connectors
+#     and the Function App
+################################################################################
+module "cc_keyvault" {
+  source         = "../../modules/terraform-zscc-keyvault-azure"
+  name_prefix    = var.name_prefix
+  resource_tag   = random_string.suffix.result
+  global_tags    = local.global_tags
+  resource_group = module.network.resource_group_name
+  location       = var.arm_location
+
+  existing_key_vault      = var.existing_key_vault
+  existing_key_vault_name = var.existing_key_vault_name
+  existing_key_vault_rg   = var.existing_key_vault_rg
+
+  secrets_enabled  = var.secrets_enabled
+  zscaler_api_key  = var.zscaler_api_key
+  zscaler_username = var.zscaler_username
+  zscaler_password = var.zscaler_password
+
+  secrets_reader_principal_id = module.cc_identity.managed_identity_principal_id
+
+  assign_deployer_secrets_officer_role = true
+  terraform_deployer_object_id         = "f6372e9d-64b1-4255-bdcc-4847b1c4a40c"
+
+  public_network_access_enabled = false
+  network_acls_default_action   = "Deny"
+  network_acls_ip_rules         = ["107.213.22.175/32"]
+  private_endpoint_enabled      = true
+  private_endpoint_subnet_id    = module.network.private_endpoint_subnet_id
+  vnet_id                       = module.network.virtual_network_id
 }
 
 ################################################################################
@@ -214,7 +259,6 @@ module "cc_nsg" {
   location               = var.arm_location
   global_tags            = local.global_tags
   support_access_enabled = var.support_access_enabled
-  public_lb_deployed     = var.public_lb_deploy
 }
 
 
@@ -259,20 +303,3 @@ module "cc_lb" {
   number_of_probes      = var.number_of_probes
 }
 
-module "cc_public_lb" {
-  source                = "../../modules/terraform-zscc-public-lb-azure"
-  count                 = (var.public_lb_deploy == true) ? 1 : 0
-  name_prefix           = var.name_prefix
-  resource_tag          = random_string.suffix.result
-  global_tags           = local.global_tags
-  resource_group        = module.network.resource_group_name
-  location              = var.arm_location
-  subnet_id             = module.network.cc_subnet_ids[0]
-  http_probe_port       = var.http_probe_port
-  load_distribution     = var.load_distribution
-  zones_enabled         = var.zones_enabled
-  zones                 = var.zones
-  health_check_interval = var.health_check_interval
-  probe_threshold       = var.probe_threshold
-  number_of_probes      = var.number_of_probes
-}

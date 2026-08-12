@@ -84,9 +84,49 @@ variable "cc_vm_prov_url" {
   description = "Zscaler Cloud Connector Provisioning URL"
 }
 
-variable "azure_vault_url" {
+variable "existing_key_vault" {
+  type        = bool
+  description = "Set to true if you wish to use an existing Key Vault instead of creating a new one. Default is false, meaning this deployment will create a new Key Vault and populate it with the zscaler_api_key/zscaler_username/zscaler_password secrets."
+  default     = false
+}
+
+variable "existing_key_vault_name" {
   type        = string
-  description = "Azure Vault URL"
+  description = "Name of existing Key Vault. Required when existing_key_vault is true."
+  default     = ""
+}
+
+variable "existing_key_vault_rg" {
+  type        = string
+  description = "Resource Group of existing Key Vault. Required when existing_key_vault is true."
+  default     = ""
+}
+
+variable "secrets_enabled" {
+  type        = bool
+  description = "Whether this deployment writes the zscaler_api_key/zscaler_username/zscaler_password secrets into the Key Vault it creates. Default is true. Set to false to create the vault without writing secret values - e.g. if the deployer lacks Key Vault RBAC permissions to write secrets - and populate them afterward by whoever has the necessary access. Only used when existing_key_vault is false."
+  default     = true
+}
+
+variable "zscaler_api_key" {
+  type        = string
+  description = "Zscaler Cloud Connector API Key (from the API Key Management page on the Zscaler Admin Console), stored as the 'api-key' secret in the Key Vault created by this deployment. Required when existing_key_vault is false and secrets_enabled is true."
+  default     = null
+  sensitive   = true
+}
+
+variable "zscaler_username" {
+  type        = string
+  description = "Zscaler Cloud Connector provisioning username, stored as the 'username' secret in the Key Vault created by this deployment. Required when existing_key_vault is false and secrets_enabled is true."
+  default     = null
+  sensitive   = true
+}
+
+variable "zscaler_password" {
+  type        = string
+  description = "Zscaler Cloud Connector provisioning password, stored as the 'password' secret in the Key Vault created by this deployment. Required when existing_key_vault is false and secrets_enabled is true."
+  default     = null
+  sensitive   = true
 }
 
 variable "ccvm_instance_type" {
@@ -386,9 +426,4 @@ variable "path_to_scripts" {
   default     = ""
 }
 
-variable "public_lb_deploy" {
-  type        = bool
-  description = "Deploy a Public Load-Balancer"
-  default     = false
-}
 

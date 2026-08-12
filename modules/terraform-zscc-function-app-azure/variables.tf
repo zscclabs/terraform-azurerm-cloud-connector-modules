@@ -125,7 +125,7 @@ variable "path_to_scripts" {
 
 variable "asp_sku_name" {
   type        = string
-  description = "SKU Name for the App Service Plan. Recommended Y1 (flex consumption) for function app unless not supported by Azure region"
+  description = "SKU Name for the App Service Plan. Recommended Y1 (flex consumption) for function app unless not supported by Azure region. Note: regional VNet Integration (vnet_integration_enabled) is only supported on EP1 among these options - Y1/FC1/B1 do not support it."
   default     = "Y1"
   validation {
     condition = (
@@ -136,4 +136,93 @@ variable "asp_sku_name" {
     )
     error_message = "Input asp_sku_name selected is not a valid/approved SKU Name."
   }
+}
+
+variable "storage_public_network_access_enabled" {
+  type        = bool
+  description = "Whether public network access is allowed on the Storage Account created by this module. Only used when existing_storage_account is false."
+  default     = true
+}
+
+variable "storage_network_rules_default_action" {
+  type        = string
+  description = "Default action (Allow or Deny) for the Storage Account network rules created by this module. Only used when existing_storage_account is false."
+  default     = "Allow"
+  validation {
+    condition = (
+      var.storage_network_rules_default_action == "Allow" ||
+      var.storage_network_rules_default_action == "Deny"
+    )
+    error_message = "Input storage_network_rules_default_action must be set to either Allow or Deny."
+  }
+}
+
+variable "storage_network_rules_ip_rules" {
+  type        = list(string)
+  description = "List of public IP or CIDR ranges to allow through the Storage Account network rules created by this module. Only used when existing_storage_account is false."
+  default     = []
+}
+
+variable "storage_network_rules_subnet_ids" {
+  type        = list(string)
+  description = "List of subnet IDs (with the Microsoft.Storage service endpoint enabled) to allow through the Storage Account network rules created by this module. Only used when existing_storage_account is false."
+  default     = []
+}
+
+variable "storage_private_endpoint_enabled" {
+  type        = bool
+  description = "Create Private Endpoints for the Storage Account if set to true - one per subresource in storage_private_endpoint_subresource_names, since Azure only permits a single subresource per Storage Account Private Endpoint. This does not by itself restrict public network access - also set storage_public_network_access_enabled to false and storage_network_rules_default_action to \"Deny\" for a fully private posture."
+  default     = false
+}
+
+variable "storage_private_endpoint_subnet_id" {
+  type        = string
+  description = "Subnet ID to deploy the Storage Account Private Endpoints into, e.g. module.network.private_endpoint_subnet_id. Required when storage_private_endpoint_enabled is true."
+  default     = null
+}
+
+variable "storage_private_endpoint_subresource_names" {
+  type        = list(string)
+  description = "Storage subresources to create a Private Endpoint for. AzureWebJobsStorage needs blob/queue/table; the Function App content share on a Premium/EP1 plan additionally needs file. Only used when storage_private_endpoint_enabled is true."
+  default     = ["blob", "file", "queue", "table"]
+  validation {
+    condition     = length(setsubtract(var.storage_private_endpoint_subresource_names, ["blob", "file", "queue", "table"])) == 0
+    error_message = "Input storage_private_endpoint_subresource_names may only contain blob, file, queue, and/or table."
+  }
+}
+
+variable "vnet_id" {
+  type        = string
+  description = "VNet ID to link the Storage Account privatelink Private DNS Zones to, e.g. module.network.virtual_network_id. Required when storage_private_endpoint_enabled is true, for any subresource not already covered by existing_storage_private_dns_zone_ids."
+  default     = null
+}
+
+variable "existing_storage_private_dns_zone_ids" {
+  type        = map(string)
+  description = "Map of subresource name (blob/file/queue/table) to an existing Private DNS Zone ID to reuse instead of creating/linking a new one for that subresource, e.g. { blob = \"...\", file = \"...\" }. Only used when storage_private_endpoint_enabled is true."
+  default     = {}
+}
+
+variable "vnet_integration_enabled" {
+  type        = bool
+  description = "Integrate the Function App with a VNet subnet for regional (Swift) VNet Integration if set to true. Requires asp_sku_name to be set to a plan that supports VNet Integration (EP1) - see asp_sku_name description."
+  default     = false
+}
+
+variable "vnet_integration_subnet_id" {
+  type        = string
+  description = "Subnet ID, delegated to Microsoft.Web/serverFarms, that the Function App will integrate into, e.g. module.network.function_app_subnet_id. Required when vnet_integration_enabled is true."
+  default     = null
+}
+
+variable "vnet_route_all_enabled" {
+  type        = bool
+  description = "Route all outbound Function App traffic (not just RFC1918-destined traffic) through the integrated VNet subnet. Only used when vnet_integration_enabled is true. RFC1918 traffic (including to Private Endpoints) is already routed over the VNet Integration by default without this."
+  default     = false
+}
+
+variable "content_share_quota_gb" {
+  type        = number
+  description = "Quota, in GB, for the Azure Files share this module creates and mounts as the Function App's content share (WEBSITE_CONTENTSHARE). Only used when vnet_integration_enabled is true."
+  default     = 100
 }

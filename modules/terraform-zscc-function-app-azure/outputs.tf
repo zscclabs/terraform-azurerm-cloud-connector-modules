@@ -22,3 +22,13 @@ output "subscription_id" {
   description = "Subscription ID."
   value       = data.azurerm_subscription.current.subscription_id
 }
+
+output "storage_account_id" {
+  description = "ID of the Storage Account (created by this module, or the existing/BYO account referenced by existing_storage_account_name/existing_storage_account_rg)"
+  value       = local.storage_account_id
+}
+
+output "storage_account_name" {
+  description = "Name of the Storage Account"
+  value       = local.storage_account_name
+}

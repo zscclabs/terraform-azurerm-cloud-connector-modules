@@ -32,3 +32,13 @@ output "private_dns_subnet_id" {
   description = "Private DNS Outbound Endpoint Subnet ID"
   value       = var.zpa_enabled ? azurerm_subnet.private_dns_subnet[0].id : ""
 }
+
+output "private_endpoint_subnet_id" {
+  description = "Private Endpoint Subnet ID"
+  value       = var.private_endpoint_enabled ? azurerm_subnet.private_endpoint_subnet[0].id : ""
+}
+
+output "function_app_subnet_id" {
+  description = "Function App VNet Integration Subnet ID"
+  value       = var.function_app_vnet_integration_enabled ? azurerm_subnet.function_app_subnet[0].id : ""
+}

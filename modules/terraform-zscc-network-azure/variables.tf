@@ -210,3 +210,27 @@ variable "existing_nat_gw_subnet_association" {
   description = "Set this to true only if both byo_nat_gws and byo_subnets variables are true. this implies that there are already NAT Gateway resources associated to subnets where Cloud Connectors are being deployed to"
   default     = false
 }
+
+variable "private_endpoint_enabled" {
+  type        = bool
+  description = "Configure a dedicated subnet for Key Vault/Storage Account Private Endpoints if set to true"
+  default     = false
+}
+
+variable "private_endpoint_subnet" {
+  type        = string
+  description = "Private Endpoint Subnet to create in VNet. This is only required if you want to override the default subnet that this code creates via network_address_space variable. Only used when private_endpoint_enabled is true."
+  default     = null
+}
+
+variable "function_app_vnet_integration_enabled" {
+  type        = bool
+  description = "Configure a subnet delegated to Microsoft.Web/serverFarms for Function App regional VNet Integration if set to true"
+  default     = false
+}
+
+variable "function_app_subnet" {
+  type        = string
+  description = "Function App VNet Integration Subnet to create in VNet. This is only required if you want to override the default subnet that this code creates via network_address_space variable. Only used when function_app_vnet_integration_enabled is true."
+  default     = null
+}

@@ -225,3 +225,39 @@ resource "azurerm_subnet_route_table_association" "private_dns_rt_association" {
   subnet_id      = azurerm_subnet.private_dns_subnet[count.index].id
   route_table_id = azurerm_route_table.private_dns_rt[count.index].id
 }
+
+
+################################################################################
+# Private Endpoint Subnet (Key Vault / Storage Account)
+################################################################################
+# Create subnet to host Key Vault/Storage Account Private Endpoints
+resource "azurerm_subnet" "private_endpoint_subnet" {
+  count                = var.private_endpoint_enabled ? 1 : 0
+  name                 = "${var.name_prefix}-pe-subnet-${var.resource_tag}"
+  resource_group_name  = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+  virtual_network_name = try(data.azurerm_virtual_network.vnet_selected[0].name, azurerm_virtual_network.vnet[0].name)
+  address_prefixes     = var.private_endpoint_subnet != null ? [var.private_endpoint_subnet] : [cidrsubnet(var.network_address_space, 12, 2481)]
+
+  private_endpoint_network_policies = "Disabled"
+}
+
+
+################################################################################
+# Function App VNet Integration Subnet
+################################################################################
+# Create subnet delegated to Microsoft.Web/serverFarms for Function App regional VNet Integration
+resource "azurerm_subnet" "function_app_subnet" {
+  count                = var.function_app_vnet_integration_enabled ? 1 : 0
+  name                 = "${var.name_prefix}-func-subnet-${var.resource_tag}"
+  resource_group_name  = try(data.azurerm_resource_group.rg_selected[0].name, azurerm_resource_group.rg[0].name)
+  virtual_network_name = try(data.azurerm_virtual_network.vnet_selected[0].name, azurerm_virtual_network.vnet[0].name)
+  address_prefixes     = var.function_app_subnet != null ? [var.function_app_subnet] : [cidrsubnet(var.network_address_space, 12, 2482)]
+
+  delegation {
+    name = "Microsoft.Web.serverFarms"
+    service_delegation {
+      name    = "Microsoft.Web/serverFarms"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+    }
+  }
+}

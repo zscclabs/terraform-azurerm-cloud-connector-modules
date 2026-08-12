@@ -23,11 +23,13 @@ ${join("\n", module.cc_vmss.vmss_names)}
 VMSS IDs:
 ${join("\n", module.cc_vmss.vmss_ids)}
 
-Load Balancer Frontend IP:  
+Load Balancer Frontend IP:
 ${module.cc_lb.lb_ip}
 
-Public Load Balancer Frontend IP:
-${local.public_ip_ip}
+Key Vault URI:
+${module.cc_keyvault.key_vault_uri}
+Key Vault Private Endpoint IP:
+${module.cc_keyvault.private_endpoint_ip_address}
 
 Function App ID:
 ${module.cc_functionapp.function_app_id}
@@ -72,14 +74,13 @@ TB
 Based on the recorded output, the manual sync to start your Azure Function App failed. To perform this manual sync perform one of the following steps:
   1. Navigate to the Azure Function App ${module.cc_functionapp.function_app_id} on the Azure Portal. The loading of the Function App page triggers the manual sync and will start your Function App.
   2. Attempt to rerun the manual_sync.sh script manually using the following command (path to file is based on root of the repo):
-      ../../modules/terraform-zscc-function-app-azure/manual_sync.sh ${module.cc_functionapp.subscription_id} ${module.network.resource_group_name} ${module.cc_functionapp.function_app_name}
+      ../../scripts/manual_sync.sh ${module.cc_functionapp.subscription_id} ${module.network.resource_group_name} ${module.cc_functionapp.function_app_name}
 **IMPORTANT (ONLY APPLICABLE FOR INITIAL CREATE OF FUNCTION APP)**
 
 TB
 }
 
 locals {
-  public_ip_ip = (one(module.cc_public_lb[*].lb_ip) == null) ? "" : one(module.cc_public_lb[*].lb_ip)
   workload_map = {
     for index, ip in module.workload.private_ip :
     index => ip

@@ -38,6 +38,8 @@ Our Deployment scripts are leveraging Terraform v1.1.9 which includes full binar
 5. Azure Vault URL with Zscaler Cloud Connector Credentials (E.g. [https://zscaler-cc-demo.vault.azure.net](https://zscaler-cc-demo.vault.azure.net/)) Add an access policy to the above Key Vault as below
     - Secret Permissions: Get, List
     - Select Principal: The Managed Identity created in the above step
+
+    > Steps 4 and 5 above can alternatively be automated via the [terraform-zscc-identity-azure](modules/terraform-zscc-identity-azure) and [terraform-zscc-keyvault-azure](modules/terraform-zscc-keyvault-azure) modules in this repo instead of creating the Managed Identity/Key Vault manually — see their respective README.md files. These are standalone modules and are not yet wired into the example root configurations under `examples/`.
 6. Accept the Cloud Connector VM image terms for the Subscription(s) where Cloud Connector is to be deployed. This can be done via the Azure Portal, Cloud Shell or az cli / powershell with a valid admin user/service principal in the correct subscription where Cloud Connector is being deployed Run Command: `az vm image terms accept --urn zscaler1579058425289:zia_cloud_connector:zs_ser_gen1_cc_01:latest`
 
 ### Terraform client requirements
@@ -49,7 +51,7 @@ Our Deployment scripts are leveraging Terraform v1.1.9 which includes full binar
 ### **Zscaler requirements**
 
 8. A valid Zscaler Cloud Connector provisioning URL generated. This is done via the Cloud Connector portal (E.g. connector..net/login)
-9. Zscaler Cloud Connector Credentials (api key, username, password) are stored in Azure Key Vault from step 5.
+9. Zscaler Cloud Connector Credentials (api key, username, password) are stored in Azure Key Vault from step 5. If using the [terraform-zscc-keyvault-azure](modules/terraform-zscc-keyvault-azure) module to automate step 5, these are stored as secrets named exactly `api-key`, `username`, and `password`.
 
 ### *Host Disk Encryption*
 To enable host encryption. You **must** subscribe to the feature on your azure account. Official Microsoft Documentation on how to enable this feature can be found [here](https://learn.microsoft.com/en-us/azure/virtual-machines/disks-enable-host-based-encryption-portal?tabs=azure-cli#prerequisites)
