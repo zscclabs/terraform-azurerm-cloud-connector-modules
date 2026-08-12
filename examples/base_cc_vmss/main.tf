@@ -200,10 +200,10 @@ module "cc_functionapp" {
   #regional VNet Integration so its own outbound calls traverse the VNet - see module README
   asp_sku_name                          = "EP1"
   vnet_id                               = module.network.virtual_network_id
-  storage_public_network_access_enabled = false
-  storage_network_rules_default_action  = "Deny"
-  storage_network_rules_ip_rules        = ["107.213.22.175"]
-  storage_private_endpoint_enabled      = true
+  storage_public_network_access_enabled = var.storage_public_network_access_enabled
+  storage_network_rules_default_action  = var.storage_network_rules_default_action
+  storage_network_rules_ip_rules        = var.storage_network_rules_ip_rules
+  storage_private_endpoint_enabled      = var.storage_private_endpoint_enabled
   storage_private_endpoint_subnet_id    = module.network.private_endpoint_subnet_id
   vnet_integration_enabled              = true
   vnet_integration_subnet_id            = module.network.function_app_subnet_id
@@ -233,12 +233,9 @@ module "cc_keyvault" {
 
   secrets_reader_principal_id = module.cc_identity.managed_identity_principal_id
 
-  assign_deployer_secrets_officer_role = true
-  terraform_deployer_object_id         = "f6372e9d-64b1-4255-bdcc-4847b1c4a40c"
-
-  public_network_access_enabled = false
-  network_acls_default_action   = "Deny"
-  network_acls_ip_rules         = ["107.213.22.175/32"]
+  public_network_access_enabled = var.key_vault_public_network_access_enabled
+  network_acls_default_action   = var.key_vault_network_acls_default_action
+  network_acls_ip_rules         = var.key_vault_network_acls_ip_rules
   private_endpoint_enabled      = true
   private_endpoint_subnet_id    = module.network.private_endpoint_subnet_id
   vnet_id                       = module.network.virtual_network_id

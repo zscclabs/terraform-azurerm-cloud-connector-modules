@@ -129,6 +129,62 @@ variable "zscaler_password" {
   sensitive   = true
 }
 
+variable "key_vault_public_network_access_enabled" {
+  type        = bool
+  description = "Whether public network access is allowed on the Key Vault created by this deployment. Default is false, matching this example's private-endpoint-only posture. Only used when existing_key_vault is false. Note this takes priority over key_vault_network_acls_ip_rules - when false, only Private Link traffic or trusted Azure services can reach the vault at all, regardless of any IP allowlist. Terraform itself needs a path to the vault to write the zscaler_api_key/zscaler_username/zscaler_password secrets - if running Terraform from outside the VNet (e.g. a local workstation, most CI runners) rather than from inside it (e.g. via the bastion host), temporarily set this to true for the apply that writes those secrets, then set it back to false afterward. See modules/terraform-zscc-keyvault-azure/README.md for more detail on this tradeoff."
+  default     = false
+}
+
+variable "key_vault_network_acls_default_action" {
+  type        = string
+  description = "Default action (Allow or Deny) for the Key Vault network ACLs on the Key Vault created by this deployment. Default is Deny, matching this example's private-endpoint-only posture. Only used when existing_key_vault is false and key_vault_public_network_access_enabled is true - network ACLs aren't evaluated at all when public network access is disabled."
+  default     = "Deny"
+  validation {
+    condition = (
+      var.key_vault_network_acls_default_action == "Allow" ||
+      var.key_vault_network_acls_default_action == "Deny"
+    )
+    error_message = "Input key_vault_network_acls_default_action must be set to either Allow or Deny."
+  }
+}
+
+variable "key_vault_network_acls_ip_rules" {
+  type        = list(string)
+  description = "List of IP or CIDR ranges to allow through the Key Vault network ACLs on the Key Vault created by this deployment, e.g. the public IP of the workstation running Terraform, as \"x.x.x.x/32\". Default is an empty list. Only used when existing_key_vault is false and key_vault_public_network_access_enabled is true."
+  default     = []
+}
+
+variable "storage_public_network_access_enabled" {
+  type        = bool
+  description = "Whether public network access is allowed on the Function App Storage Account created by this deployment. Default is false, matching this example's private-endpoint-only posture. Only used when existing_storage_account is false. Note this takes priority over storage_network_rules_ip_rules - when false, only Private Link traffic or trusted Azure services can reach the Storage Account at all, regardless of any IP allowlist. Terraform itself needs a path to the Storage Account to upload the Function App zip (when upload_function_app_zip is true) and to create/manage the Function App content share (when vnet_integration_enabled is true) - if running Terraform from outside the VNet (e.g. a local workstation, most CI runners) rather than from inside it (e.g. via the bastion host), temporarily set this to true for the apply that creates/updates those objects, then set it back to false afterward. See modules/terraform-zscc-function-app-azure/README.md for more detail on this tradeoff."
+  default     = false
+}
+
+variable "storage_network_rules_default_action" {
+  type        = string
+  description = "Default action (Allow or Deny) for the Storage Account network rules on the Function App Storage Account created by this deployment. Default is Deny, matching this example's private-endpoint-only posture. Only used when existing_storage_account is false and storage_public_network_access_enabled is true - network rules aren't evaluated at all when public network access is disabled."
+  default     = "Deny"
+  validation {
+    condition = (
+      var.storage_network_rules_default_action == "Allow" ||
+      var.storage_network_rules_default_action == "Deny"
+    )
+    error_message = "Input storage_network_rules_default_action must be set to either Allow or Deny."
+  }
+}
+
+variable "storage_network_rules_ip_rules" {
+  type        = list(string)
+  description = "List of IP or CIDR ranges to allow through the Storage Account network rules on the Function App Storage Account created by this deployment, e.g. the public IP of the workstation running Terraform. Default is an empty list. Only used when existing_storage_account is false and storage_public_network_access_enabled is true. Note: unlike key_vault_network_acls_ip_rules, the Azure Storage firewall rejects CIDR notation here - pass bare IPs, e.g. \"x.x.x.x\" not \"x.x.x.x/32\"."
+  default     = []
+}
+
+variable "storage_private_endpoint_enabled" {
+  type        = bool
+  description = "Create Private Endpoints for the Function App Storage Account if set to true - one per subresource needed (blob/file/queue/table). Default is true, matching this example's private-endpoint-only posture. This does not by itself restrict public network access - it's independent of storage_public_network_access_enabled/storage_network_rules_default_action. Set to false only if you don't want Private Endpoints for the Storage Account at all, e.g. a fully public/BYO-network-controls deployment - note the Cloud Connector VMSS/Function App wiring in this example assumes Private Endpoints exist, so disabling this without also reworking storage_public_network_access_enabled may leave the Storage Account unreachable from the VNet-integrated Function App."
+  default     = true
+}
+
 variable "ccvm_instance_type" {
   type        = string
   description = "Cloud Connector Image size"

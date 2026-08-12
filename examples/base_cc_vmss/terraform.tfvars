@@ -210,3 +210,40 @@ secrets_enabled = true
 zscaler_api_key  = "<zscaler-api-key>"
 zscaler_username = "<zscaler-provisioning-username>"
 zscaler_password = "<zscaler-provisioning-password>"
+
+## Key Vault network access. By default this deployment locks the Key Vault down to Private Endpoint-only
+## access (key_vault_public_network_access_enabled = false), matching the private-endpoint-only posture this
+## example is designed for. Terraform itself needs a path to the vault to write the zscaler_api_key/
+## zscaler_username/zscaler_password secrets above - if you're running Terraform from outside the VNet (e.g.
+## a local workstation, most CI runners) rather than from inside it (e.g. via the bastion host), you have two
+## options for the apply that writes those secrets:
+##   1. Temporarily set key_vault_public_network_access_enabled = true below, apply, then set it back to false
+##      and apply again.
+##   2. Leave key_vault_public_network_access_enabled = false, and instead allowlist your workstation's public
+##      IP via key_vault_network_acls_ip_rules (note: network ACLs are only evaluated when public network
+##      access is enabled at all, so this still requires key_vault_public_network_access_enabled = true).
+## See modules/terraform-zscc-keyvault-azure/README.md for more detail on this tradeoff.
+
+#key_vault_public_network_access_enabled = true
+#key_vault_network_acls_default_action   = "Deny"
+#key_vault_network_acls_ip_rules         = ["<your-public-ip>/32"]
+
+## Function App Storage Account network access. Same tradeoff as the Key Vault above - by default this
+## deployment locks the Storage Account down to Private Endpoint-only access
+## (storage_public_network_access_enabled = false). Terraform needs a path to it to upload the Function App
+## zip (upload_function_app_zip = true) and manage the Function App content share (vnet_integration_enabled =
+## true) - same two options apply: temporarily flip storage_public_network_access_enabled to true for the
+## apply that touches those objects, or allowlist your workstation's IP via storage_network_rules_ip_rules
+## (still requires storage_public_network_access_enabled = true - network rules aren't evaluated otherwise).
+## Note: the Azure Storage firewall rejects CIDR notation - use a bare IP here, not "x.x.x.x/32".
+## See modules/terraform-zscc-function-app-azure/README.md for more detail on this tradeoff.
+
+#storage_public_network_access_enabled = true
+#storage_network_rules_default_action  = "Deny"
+#storage_network_rules_ip_rules        = ["<your-public-ip>"]
+
+## Set to false only if you don't want Private Endpoints created for the Storage Account at all (default
+## true). Independent of storage_public_network_access_enabled/storage_network_rules_default_action above -
+## disabling this without reworking those may leave the Storage Account unreachable from the VNet-integrated
+## Function App, since this example's wiring assumes Private Endpoints exist.
+#storage_private_endpoint_enabled = false

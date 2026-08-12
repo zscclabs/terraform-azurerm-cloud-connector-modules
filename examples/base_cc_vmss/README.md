@@ -336,3 +336,131 @@ To find this Mgmt IP navigate to: Resource Group -> select Scale Set -> Instance
 | ---- | ----------- |
 | <a name="output_testbedconfig"></a> [testbedconfig](#output\_testbedconfig) | Azure Testbed results |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+
+<!-- BEGIN_TF_DOCS -->
+## Requirements
+
+| Name | Version |
+| ---- | ------- |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13.7, < 2.0.0 |
+| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | >= 3.108.0, <= 3.116 |
+| <a name="requirement_local"></a> [local](#requirement\_local) | ~> 2.5.0 |
+| <a name="requirement_null"></a> [null](#requirement\_null) | ~> 3.1.0 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.3.0 |
+| <a name="requirement_tls"></a> [tls](#requirement\_tls) | ~> 3.4.0 |
+
+## Providers
+
+| Name | Version |
+| ---- | ------- |
+| <a name="provider_local"></a> [local](#provider\_local) | ~> 2.5.0 |
+| <a name="provider_random"></a> [random](#provider\_random) | ~> 3.3.0 |
+| <a name="provider_tls"></a> [tls](#provider\_tls) | ~> 3.4.0 |
+
+## Modules
+
+| Name | Source | Version |
+| ---- | ------ | ------- |
+| <a name="module_bastion"></a> [bastion](#module\_bastion) | ../../modules/terraform-zscc-bastion-azure | n/a |
+| <a name="module_cc_functionapp"></a> [cc\_functionapp](#module\_cc\_functionapp) | ../../modules/terraform-zscc-function-app-azure | n/a |
+| <a name="module_cc_identity"></a> [cc\_identity](#module\_cc\_identity) | ../../modules/terraform-zscc-identity-azure | n/a |
+| <a name="module_cc_keyvault"></a> [cc\_keyvault](#module\_cc\_keyvault) | ../../modules/terraform-zscc-keyvault-azure | n/a |
+| <a name="module_cc_lb"></a> [cc\_lb](#module\_cc\_lb) | ../../modules/terraform-zscc-lb-azure | n/a |
+| <a name="module_cc_nsg"></a> [cc\_nsg](#module\_cc\_nsg) | ../../modules/terraform-zscc-nsg-azure | n/a |
+| <a name="module_cc_vmss"></a> [cc\_vmss](#module\_cc\_vmss) | ../../modules/terraform-zscc-ccvmss-azure | n/a |
+| <a name="module_network"></a> [network](#module\_network) | ../../modules/terraform-zscc-network-azure | n/a |
+| <a name="module_workload"></a> [workload](#module\_workload) | ../../modules/terraform-zscc-workload-azure | n/a |
+
+## Resources
+
+| Name | Type |
+| ---- | ---- |
+| [local_file.private_key](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
+| [local_file.ssh_config](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
+| [local_file.testbed](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
+| [local_file.user_data_file](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
+| [random_string.suffix](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
+| [tls_private_key.key](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) | resource |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+| ---- | ----------- | ---- | ------- | :------: |
+| <a name="input_accelerated_networking_enabled"></a> [accelerated\_networking\_enabled](#input\_accelerated\_networking\_enabled) | Enable/Disable accelerated networking support on all Cloud Connector service interfaces | `bool` | `true` | no |
+| <a name="input_arm_location"></a> [arm\_location](#input\_arm\_location) | The Azure Region where resources are to be deployed | `string` | `"westus2"` | no |
+| <a name="input_bastion_nsg_source_prefix"></a> [bastion\_nsg\_source\_prefix](#input\_bastion\_nsg\_source\_prefix) | user input for locking down SSH access to bastion to a specific IP or CIDR range | `string` | `"*"` | no |
+| <a name="input_cc_subnets"></a> [cc\_subnets](#input\_cc\_subnets) | Cloud Connector Subnets to create in VNet. This is only required if you want to override the default subnets that this code creates via network\_address\_space variable. | `list(string)` | `null` | no |
+| <a name="input_cc_vm_managed_identity_name"></a> [cc\_vm\_managed\_identity\_name](#input\_cc\_vm\_managed\_identity\_name) | Azure Managed Identity name to attach to the CC VM. E.g zspreview-66117-mi | `string` | n/a | yes |
+| <a name="input_cc_vm_managed_identity_rg"></a> [cc\_vm\_managed\_identity\_rg](#input\_cc\_vm\_managed\_identity\_rg) | Resource Group of the Azure Managed Identity name to attach to the CC VM. E.g. edgeconnector\_rg\_1 | `string` | n/a | yes |
+| <a name="input_cc_vm_prov_url"></a> [cc\_vm\_prov\_url](#input\_cc\_vm\_prov\_url) | Zscaler Cloud Connector Provisioning URL | `string` | n/a | yes |
+| <a name="input_ccvm_image_offer"></a> [ccvm\_image\_offer](#input\_ccvm\_image\_offer) | Azure Marketplace Cloud Connector Image Offer | `string` | `"zia_cloud_connector"` | no |
+| <a name="input_ccvm_image_publisher"></a> [ccvm\_image\_publisher](#input\_ccvm\_image\_publisher) | Azure Marketplace Cloud Connector Image Publisher | `string` | `"zscaler1579058425289"` | no |
+| <a name="input_ccvm_image_sku"></a> [ccvm\_image\_sku](#input\_ccvm\_image\_sku) | Azure Marketplace Cloud Connector Image SKU | `string` | `"zs_ser_gen1_cc_01"` | no |
+| <a name="input_ccvm_image_version"></a> [ccvm\_image\_version](#input\_ccvm\_image\_version) | Azure Marketplace Cloud Connector Image Version | `string` | `"latest"` | no |
+| <a name="input_ccvm_instance_type"></a> [ccvm\_instance\_type](#input\_ccvm\_instance\_type) | Cloud Connector Image size | `string` | `"Standard_D2s_v3"` | no |
+| <a name="input_ccvm_source_image_id"></a> [ccvm\_source\_image\_id](#input\_ccvm\_source\_image\_id) | Custom Cloud Connector Source Image ID. Set this value to the path of a local subscription Microsoft.Compute image to override the Cloud Connector deployment instead of using the marketplace publisher | `string` | `null` | no |
+| <a name="input_encryption_at_host_enabled"></a> [encryption\_at\_host\_enabled](#input\_encryption\_at\_host\_enabled) | User input for enabling or disabling host encryption | `bool` | `true` | no |
+| <a name="input_env_subscription_id"></a> [env\_subscription\_id](#input\_env\_subscription\_id) | Azure Subscription ID where resources are to be deployed in | `string` | n/a | yes |
+| <a name="input_environment"></a> [environment](#input\_environment) | Customer defined environment tag. ie: Dev, QA, Prod, etc. | `string` | `"Development"` | no |
+| <a name="input_existing_key_vault"></a> [existing\_key\_vault](#input\_existing\_key\_vault) | Set to true if you wish to use an existing Key Vault instead of creating a new one. Default is false, meaning this deployment will create a new Key Vault and populate it with the zscaler\_api\_key/zscaler\_username/zscaler\_password secrets. | `bool` | `false` | no |
+| <a name="input_existing_key_vault_name"></a> [existing\_key\_vault\_name](#input\_existing\_key\_vault\_name) | Name of existing Key Vault. Required when existing\_key\_vault is true. | `string` | `""` | no |
+| <a name="input_existing_key_vault_rg"></a> [existing\_key\_vault\_rg](#input\_existing\_key\_vault\_rg) | Resource Group of existing Key Vault. Required when existing\_key\_vault is true. | `string` | `""` | no |
+| <a name="input_existing_log_analytics_workspace"></a> [existing\_log\_analytics\_workspace](#input\_existing\_log\_analytics\_workspace) | Set to True if you wish to use an existing Log Analytics Workspace to associate with the AppInsights Instance. Default is false meaning Terraform module will create a new one | `bool` | `false` | no |
+| <a name="input_existing_log_analytics_workspace_id"></a> [existing\_log\_analytics\_workspace\_id](#input\_existing\_log\_analytics\_workspace\_id) | ID of existing Log Analytics Workspace to associate with the AppInsights Instance. | `string` | `""` | no |
+| <a name="input_existing_storage_account"></a> [existing\_storage\_account](#input\_existing\_storage\_account) | Set to True if you wish to use an existing Storage Account to associate with the Function App. Default is false meaning Terraform module will create a new one | `bool` | `false` | no |
+| <a name="input_existing_storage_account_name"></a> [existing\_storage\_account\_name](#input\_existing\_storage\_account\_name) | Name of existing Storage Account to associate with the Function App. | `string` | `""` | no |
+| <a name="input_existing_storage_account_rg"></a> [existing\_storage\_account\_rg](#input\_existing\_storage\_account\_rg) | Resource Group of existing Storage Account to associate with the Function App. | `string` | `""` | no |
+| <a name="input_function_app_managed_identity_name"></a> [function\_app\_managed\_identity\_name](#input\_function\_app\_managed\_identity\_name) | Azure Managed Identity name to attach to the Function App. E.g zspreview-66117-mi | `string` | `""` | no |
+| <a name="input_function_app_managed_identity_rg"></a> [function\_app\_managed\_identity\_rg](#input\_function\_app\_managed\_identity\_rg) | Resource Group of the Azure Managed Identity name to attach to the Function App. E.g. edgeconnector\_rg\_1 | `string` | `""` | no |
+| <a name="input_health_check_interval"></a> [health\_check\_interval](#input\_health\_check\_interval) | The interval, in seconds, for how frequently to probe the endpoint for health status. Typically, the interval is slightly less than half the allocated timeout period (in seconds) which allows two full probes before taking the instance out of rotation. The default value is 15, the minimum value is 5 | `number` | `15` | no |
+| <a name="input_http_probe_port"></a> [http\_probe\_port](#input\_http\_probe\_port) | Port number for Cloud Connector cloud init to enable listener port for HTTP probe from Azure LB | `number` | `50000` | no |
+| <a name="input_key_vault_network_acls_default_action"></a> [key\_vault\_network\_acls\_default\_action](#input\_key\_vault\_network\_acls\_default\_action) | Default action (Allow or Deny) for the Key Vault network ACLs on the Key Vault created by this deployment. Default is Deny, matching this example's private-endpoint-only posture. Only used when existing\_key\_vault is false and key\_vault\_public\_network\_access\_enabled is true - network ACLs aren't evaluated at all when public network access is disabled. | `string` | `"Deny"` | no |
+| <a name="input_key_vault_network_acls_ip_rules"></a> [key\_vault\_network\_acls\_ip\_rules](#input\_key\_vault\_network\_acls\_ip\_rules) | List of IP or CIDR ranges to allow through the Key Vault network ACLs on the Key Vault created by this deployment, e.g. the public IP of the workstation running Terraform, as "x.x.x.x/32". Default is an empty list. Only used when existing\_key\_vault is false and key\_vault\_public\_network\_access\_enabled is true. | `list(string)` | `[]` | no |
+| <a name="input_key_vault_public_network_access_enabled"></a> [key\_vault\_public\_network\_access\_enabled](#input\_key\_vault\_public\_network\_access\_enabled) | Whether public network access is allowed on the Key Vault created by this deployment. Default is false, matching this example's private-endpoint-only posture. Only used when existing\_key\_vault is false. Note this takes priority over key\_vault\_network\_acls\_ip\_rules - when false, only Private Link traffic or trusted Azure services can reach the vault at all, regardless of any IP allowlist. Terraform itself needs a path to the vault to write the zscaler\_api\_key/zscaler\_username/zscaler\_password secrets - if running Terraform from outside the VNet (e.g. a local workstation, most CI runners) rather than from inside it (e.g. via the bastion host), temporarily set this to true for the apply that writes those secrets, then set it back to false afterward. See modules/terraform-zscc-keyvault-azure/README.md for more detail on this tradeoff. | `bool` | `false` | no |
+| <a name="input_load_distribution"></a> [load\_distribution](#input\_load\_distribution) | Azure LB load distribution method | `string` | `"Default"` | no |
+| <a name="input_managed_identity_subscription_id"></a> [managed\_identity\_subscription\_id](#input\_managed\_identity\_subscription\_id) | Azure Subscription ID where the User Managed Identity resource exists. Only required if this Subscription ID is different than env\_subscription\_id | `string` | `null` | no |
+| <a name="input_name_prefix"></a> [name\_prefix](#input\_name\_prefix) | The name prefix for all your resources | `string` | `"zscc"` | no |
+| <a name="input_network_address_space"></a> [network\_address\_space](#input\_network\_address\_space) | VNet IP CIDR Range. All subnet resources that might get created (public, workload, cloud connector) are derived from this /16 CIDR. If you require creating a VNet smaller than /16, you may need to explicitly define all other subnets via public\_subnets, workload\_subnets, cc\_subnets, and route53\_subnets variables | `string` | `"10.1.0.0/16"` | no |
+| <a name="input_number_of_probes"></a> [number\_of\_probes](#input\_number\_of\_probes) | The number of probes where if no response, will result in stopping further traffic from being delivered to the endpoint. This values allows endpoints to be taken out of rotation faster or slower than the typical times used in Azure | `number` | `1` | no |
+| <a name="input_owner_tag"></a> [owner\_tag](#input\_owner\_tag) | Customer defined owner tag value. ie: Org, Dept, username, etc. | `string` | `"zscc-admin"` | no |
+| <a name="input_path_to_scripts"></a> [path\_to\_scripts](#input\_path\_to\_scripts) | Path to script\_directory | `string` | `""` | no |
+| <a name="input_probe_threshold"></a> [probe\_threshold](#input\_probe\_threshold) | The number of consecutive successful or failed probes in order to allow or deny traffic from being delivered to this endpoint. After failing the number of consecutive probes equal to this value, the endpoint will be taken out of rotation and require the same number of successful consecutive probes to be placed back in rotation. | `number` | `2` | no |
+| <a name="input_public_subnets"></a> [public\_subnets](#input\_public\_subnets) | Public/Bastion Subnets to create in VNet. This is only required if you want to override the default subnets that this code creates via network\_address\_space variable. | `list(string)` | `null` | no |
+| <a name="input_run_manual_sync"></a> [run\_manual\_sync](#input\_run\_manual\_sync) | Set to True if you would like terraform to run the manual sync operation to start the Function App after creation. The alternative is to navigate to the Function App on the Azure Portal UI or to manually invoke the script yourself. | `bool` | `true` | no |
+| <a name="input_scale_in_threshold"></a> [scale\_in\_threshold](#input\_scale\_in\_threshold) | Metric threshold for determining scale in. | `number` | `50` | no |
+| <a name="input_scale_out_threshold"></a> [scale\_out\_threshold](#input\_scale\_out\_threshold) | Metric threshold for determining scale out. | `number` | `70` | no |
+| <a name="input_scheduled_scaling_days_of_week"></a> [scheduled\_scaling\_days\_of\_week](#input\_scheduled\_scaling\_days\_of\_week) | Days of the week to apply scheduled scaling profile. | `list(string)` | <pre>[<br/>  "Monday",<br/>  "Tuesday",<br/>  "Wednesday",<br/>  "Thursday",<br/>  "Friday"<br/>]</pre> | no |
+| <a name="input_scheduled_scaling_enabled"></a> [scheduled\_scaling\_enabled](#input\_scheduled\_scaling\_enabled) | Enable scheduled scaling on top of metric scaling. | `bool` | `false` | no |
+| <a name="input_scheduled_scaling_end_time_hour"></a> [scheduled\_scaling\_end\_time\_hour](#input\_scheduled\_scaling\_end\_time\_hour) | Hour to end scheduled scaling profile. | `number` | `17` | no |
+| <a name="input_scheduled_scaling_end_time_min"></a> [scheduled\_scaling\_end\_time\_min](#input\_scheduled\_scaling\_end\_time\_min) | Minute to end scheduled scaling profile. | `number` | `0` | no |
+| <a name="input_scheduled_scaling_start_time_hour"></a> [scheduled\_scaling\_start\_time\_hour](#input\_scheduled\_scaling\_start\_time\_hour) | Hour to start scheduled scaling profile. | `number` | `9` | no |
+| <a name="input_scheduled_scaling_start_time_min"></a> [scheduled\_scaling\_start\_time\_min](#input\_scheduled\_scaling\_start\_time\_min) | Minute to start scheduled scaling profile. | `number` | `0` | no |
+| <a name="input_scheduled_scaling_timezone"></a> [scheduled\_scaling\_timezone](#input\_scheduled\_scaling\_timezone) | Timezone the times for the scheduled scaling profile are specified in. | `string` | `"Pacific Standard Time"` | no |
+| <a name="input_scheduled_scaling_vmss_min_ccs"></a> [scheduled\_scaling\_vmss\_min\_ccs](#input\_scheduled\_scaling\_vmss\_min\_ccs) | Minimum number of CCs in vmss for scheduled scaling profile. | `number` | `2` | no |
+| <a name="input_secrets_enabled"></a> [secrets\_enabled](#input\_secrets\_enabled) | Whether this deployment writes the zscaler\_api\_key/zscaler\_username/zscaler\_password secrets into the Key Vault it creates. Default is true. Set to false to create the vault without writing secret values - e.g. if the deployer lacks Key Vault RBAC permissions to write secrets - and populate them afterward by whoever has the necessary access. Only used when existing\_key\_vault is false. | `bool` | `true` | no |
+| <a name="input_storage_network_rules_default_action"></a> [storage\_network\_rules\_default\_action](#input\_storage\_network\_rules\_default\_action) | Default action (Allow or Deny) for the Storage Account network rules on the Function App Storage Account created by this deployment. Default is Deny, matching this example's private-endpoint-only posture. Only used when existing\_storage\_account is false and storage\_public\_network\_access\_enabled is true - network rules aren't evaluated at all when public network access is disabled. | `string` | `"Deny"` | no |
+| <a name="input_storage_network_rules_ip_rules"></a> [storage\_network\_rules\_ip\_rules](#input\_storage\_network\_rules\_ip\_rules) | List of IP or CIDR ranges to allow through the Storage Account network rules on the Function App Storage Account created by this deployment, e.g. the public IP of the workstation running Terraform. Default is an empty list. Only used when existing\_storage\_account is false and storage\_public\_network\_access\_enabled is true. Note: unlike key\_vault\_network\_acls\_ip\_rules, the Azure Storage firewall rejects CIDR notation here - pass bare IPs, e.g. "x.x.x.x" not "x.x.x.x/32". | `list(string)` | `[]` | no |
+| <a name="input_storage_private_endpoint_enabled"></a> [storage\_private\_endpoint\_enabled](#input\_storage\_private\_endpoint\_enabled) | Create Private Endpoints for the Function App Storage Account if set to true - one per subresource needed (blob/file/queue/table). Default is true, matching this example's private-endpoint-only posture. This does not by itself restrict public network access - it's independent of storage\_public\_network\_access\_enabled/storage\_network\_rules\_default\_action. Set to false only if you don't want Private Endpoints for the Storage Account at all, e.g. a fully public/BYO-network-controls deployment - note the Cloud Connector VMSS/Function App wiring in this example assumes Private Endpoints exist, so disabling this without also reworking storage\_public\_network\_access\_enabled may leave the Storage Account unreachable from the VNet-integrated Function App. | `bool` | `true` | no |
+| <a name="input_storage_public_network_access_enabled"></a> [storage\_public\_network\_access\_enabled](#input\_storage\_public\_network\_access\_enabled) | Whether public network access is allowed on the Function App Storage Account created by this deployment. Default is false, matching this example's private-endpoint-only posture. Only used when existing\_storage\_account is false. Note this takes priority over storage\_network\_rules\_ip\_rules - when false, only Private Link traffic or trusted Azure services can reach the Storage Account at all, regardless of any IP allowlist. Terraform itself needs a path to the Storage Account to upload the Function App zip (when upload\_function\_app\_zip is true) and to create/manage the Function App content share (when vnet\_integration\_enabled is true) - if running Terraform from outside the VNet (e.g. a local workstation, most CI runners) rather than from inside it (e.g. via the bastion host), temporarily set this to true for the apply that creates/updates those objects, then set it back to false afterward. See modules/terraform-zscc-function-app-azure/README.md for more detail on this tradeoff. | `bool` | `false` | no |
+| <a name="input_support_access_enabled"></a> [support\_access\_enabled](#input\_support\_access\_enabled) | If Network Security Group is being configured, enable a specific outbound rule for Cloud Connector to be able to establish connectivity for Zscaler support access. Default is true | `bool` | `true` | no |
+| <a name="input_terminate_unhealthy_instances"></a> [terminate\_unhealthy\_instances](#input\_terminate\_unhealthy\_instances) | Indicate whether detected unhealthy instances are terminated or not. | `bool` | `true` | no |
+| <a name="input_tls_key_algorithm"></a> [tls\_key\_algorithm](#input\_tls\_key\_algorithm) | algorithm for tls\_private\_key resource | `string` | `"RSA"` | no |
+| <a name="input_upload_function_app_zip"></a> [upload\_function\_app\_zip](#input\_upload\_function\_app\_zip) | By default, this Terraform will create a new Storage Account/Container/Blob to upload the zip file. The function app will pull from the blobl url to run. Setting this value to false will prevent creation/upload of the blob file | `bool` | `true` | no |
+| <a name="input_vmss_default_ccs"></a> [vmss\_default\_ccs](#input\_vmss\_default\_ccs) | Default number of CCs in vmss. | `number` | `2` | no |
+| <a name="input_vmss_max_ccs"></a> [vmss\_max\_ccs](#input\_vmss\_max\_ccs) | Maximum number of CCs in vmss. | `number` | `16` | no |
+| <a name="input_vmss_min_ccs"></a> [vmss\_min\_ccs](#input\_vmss\_min\_ccs) | Minimum number of CCs in vmss. | `number` | `2` | no |
+| <a name="input_workload_count"></a> [workload\_count](#input\_workload\_count) | The number of Workload VMs to deploy | `number` | `1` | no |
+| <a name="input_workloads_subnets"></a> [workloads\_subnets](#input\_workloads\_subnets) | Workload Subnets to create in VNet. This is only required if you want to override the default subnets that this code creates via network\_address\_space variable. | `list(string)` | `null` | no |
+| <a name="input_zones"></a> [zones](#input\_zones) | Specify which availability zone(s) to deploy VM resources in if zones\_enabled variable is set to true | `list(string)` | <pre>[<br/>  "1"<br/>]</pre> | no |
+| <a name="input_zones_enabled"></a> [zones\_enabled](#input\_zones\_enabled) | Determine whether to provision Cloud Connector VMs explicitly in defined zones (if supported by the Azure region provided in the location variable). If left false, Azure will automatically choose a zone and module will create an availability set resource instead for VM fault tolerance | `bool` | `false` | no |
+| <a name="input_zscaler_api_key"></a> [zscaler\_api\_key](#input\_zscaler\_api\_key) | Zscaler Cloud Connector API Key (from the API Key Management page on the Zscaler Admin Console), stored as the 'api-key' secret in the Key Vault created by this deployment. Required when existing\_key\_vault is false and secrets\_enabled is true. | `string` | `null` | no |
+| <a name="input_zscaler_cc_function_public_url"></a> [zscaler\_cc\_function\_public\_url](#input\_zscaler\_cc\_function\_public\_url) | Publicly accessible URL path where Function App can pull its zip file build from. This is only required when var.upload\_function\_app\_zip is set to false | `string` | `""` | no |
+| <a name="input_zscaler_password"></a> [zscaler\_password](#input\_zscaler\_password) | Zscaler Cloud Connector provisioning password, stored as the 'password' secret in the Key Vault created by this deployment. Required when existing\_key\_vault is false and secrets\_enabled is true. | `string` | `null` | no |
+| <a name="input_zscaler_username"></a> [zscaler\_username](#input\_zscaler\_username) | Zscaler Cloud Connector provisioning username, stored as the 'username' secret in the Key Vault created by this deployment. Required when existing\_key\_vault is false and secrets\_enabled is true. | `string` | `null` | no |
+
+## Outputs
+
+| Name | Description |
+| ---- | ----------- |
+| <a name="output_testbedconfig"></a> [testbedconfig](#output\_testbedconfig) | Azure Testbed results |
+<!-- END_TF_DOCS -->
